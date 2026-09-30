@@ -86,10 +86,46 @@ class YourPageRank:
     """
 
     def __init__(self, beta=0.85, tol=1e-10, max_iter=100):
-        raise NotImplementedError("write your PageRank")
+        self.beta, self.tol, self.max_iter = beta, tol, max_iter
+        self._held = 0
 
     def run(self, graph):
-        raise NotImplementedError
+        beta, n = self.beta, len(graph)
+        nodes = list(graph)
+        index = {v: i for i, v in enumerate(nodes)}
+
+        # What we store instead of M: for every node, the integer ids of its
+        # out-neighbours (E numbers in total) and its out-degree (n numbers).
+        adj = [[index[w] for w in graph[v]] for v in nodes]
+        inv_deg = [1.0 / len(a) if a else 0.0 for a in adj]
+        dead = [i for i, a in enumerate(adj) if not a]
+        active = [(i, a) for i, a in enumerate(adj) if a]
+        edges = sum(len(a) for a in adj)
+
+        r = [1.0 / n] * n
+        for self.iterations in range(1, self.max_iter + 1):
+            # Teleport and dead-end mass are the SAME number for every node, so we
+            # compute it once as a scalar and never build an n x n (or even
+            # per-node) operation for it.
+            leaked = sum(r[i] for i in dead)
+            base = (1 - beta) / n + beta * leaked / n
+
+            nr = [base] * n
+            for i, outs in active:
+                share = beta * r[i] * inv_deg[i]
+                for j in outs:
+                    nr[j] += share
+
+            delta = sum(abs(a - b) for a, b in zip(nr, r))
+            r = nr
+            if delta < self.tol:
+                break
+
+        # At peak: adjacency entries (E) + out-degrees (n) + r (n) + nr (n).
+        # (r and nr coexist inside an iteration; `dead`/`active` are index lists
+        # of size <= n, counted once more below to stay honest.)
+        self._held = edges + 3 * n + len(dead) + len(active)
+        return {v: r[index[v]] for v in nodes}
 
     def memory_floats(self):
-        raise NotImplementedError
+        return self._held

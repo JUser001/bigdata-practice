@@ -41,7 +41,41 @@ def pagerank(graph, beta=0.85, iterations=100, tol=1e-10):
     you should call it converged. Return the ranks, and set `pagerank.iterations`
     to how many you actually used, because Task 2 measures that.
     """
-    raise NotImplementedError("implement PageRank")
+    # Every node counts, including ones that only ever appear as a link target.
+    nodes = list(graph)
+    seen = set(nodes)
+    for outs in graph.values():
+        for w in outs:
+            if w not in seen:
+                seen.add(w)
+                nodes.append(w)
+    n = len(nodes)
+    outs_of = {v: graph.get(v, []) for v in nodes}
+    dead_ends = [v for v in nodes if not outs_of[v]]
+
+    r = {v: 1.0 / n for v in nodes}
+    pagerank.iterations = 0
+    for it in range(1, iterations + 1):
+        # A dead end has nowhere to send its rank. Choice made here: it teleports
+        # to a uniformly random page (same as the surfer being "stuck" and jumping).
+        leaked = sum(r[v] for v in dead_ends)
+        # teleport (1 - beta) plus the dead-end share: the same amount for every node
+        base = ((1 - beta) + beta * leaked) / n
+
+        nr = {v: base for v in nodes}
+        for v in nodes:
+            outs = outs_of[v]
+            if outs:
+                share = beta * r[v] / len(outs)
+                for w in outs:
+                    nr[w] += share
+
+        delta = sum(abs(nr[v] - r[v]) for v in nodes)
+        r = nr
+        pagerank.iterations = it
+        if delta < tol:
+            break
+    return r
 
 
 def pagerank_no_teleport(graph, iterations=100):
@@ -50,7 +84,26 @@ def pagerank_no_teleport(graph, iterations=100):
     It exists so you can watch both failures happen rather than take them on
     trust. The harness checks that it really does fail.
     """
-    raise NotImplementedError("implement the broken version")
+    nodes = list(graph)
+    seen = set(nodes)
+    for outs in graph.values():
+        for w in outs:
+            if w not in seen:
+                seen.add(w)
+                nodes.append(w)
+    n = len(nodes)
+
+    r = {v: 1.0 / n for v in nodes}
+    for _ in range(iterations):
+        nr = {v: 0.0 for v in nodes}        # no teleport term
+        for v in nodes:
+            outs = graph.get(v, [])
+            if outs:                        # a dead end sends its rank nowhere: it just vanishes
+                share = r[v] / len(outs)
+                for w in outs:
+                    nr[w] += share
+        r = nr
+    return r
 
 
 # ------------------------------------------------------------------- harness
