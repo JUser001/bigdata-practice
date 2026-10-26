@@ -41,6 +41,7 @@ def pagerank(graph, beta=0.85, iterations=100, tol=1e-10):
     you should call it converged. Return the ranks, and set `pagerank.iterations`
     to how many you actually used, because Task 2 measures that.
     """
+<<<<<<< HEAD
     # Every node counts, including ones that only ever appear as a link target.
     nodes = list(graph)
     seen = set(nodes)
@@ -76,6 +77,9 @@ def pagerank(graph, beta=0.85, iterations=100, tol=1e-10):
         if delta < tol:
             break
     return r
+=======
+    raise NotImplementedError("implement PageRank")
+>>>>>>> 9de02e6 (Week6 lab)
 
 
 def pagerank_no_teleport(graph, iterations=100):
@@ -84,6 +88,7 @@ def pagerank_no_teleport(graph, iterations=100):
     It exists so you can watch both failures happen rather than take them on
     trust. The harness checks that it really does fail.
     """
+<<<<<<< HEAD
     nodes = list(graph)
     seen = set(nodes)
     for outs in graph.values():
@@ -104,6 +109,9 @@ def pagerank_no_teleport(graph, iterations=100):
                     nr[w] += share
         r = nr
     return r
+=======
+    raise NotImplementedError("implement the broken version")
+>>>>>>> 9de02e6 (Week6 lab)
 
 
 # ------------------------------------------------------------------- harness

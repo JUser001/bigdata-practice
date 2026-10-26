@@ -32,8 +32,11 @@ def main():
     p.add_argument("--nodes", type=int, default=None,
                    help="graph size; default is the harness graph")
     p.add_argument("--tol", type=float, default=1e-10)
+<<<<<<< HEAD
     p.add_argument("--max-iter", type=int, default=5000,
                    help="iteration cap (500 was too low for beta=0.99)")
+=======
+>>>>>>> 9de02e6 (Week6 lab)
     a = p.parse_args()
     os.makedirs(OUT, exist_ok=True)
 
@@ -47,13 +50,20 @@ def main():
     rows = []
     for beta in [float(x) for x in a.betas.split(",")]:
         t0 = time.perf_counter()
+<<<<<<< HEAD
         ranks = pagerank(graph, beta=beta, iterations=a.max_iter, tol=a.tol)
+=======
+        ranks = pagerank(graph, beta=beta, iterations=500, tol=a.tol)
+>>>>>>> 9de02e6 (Week6 lab)
         elapsed = time.perf_counter() - t0
         iters = getattr(pagerank, "iterations", None)
         top = sorted(ranks.items(), key=lambda kv: -kv[1])[:10]
         rows.append({"beta": beta, "nodes": len(graph), "tol": a.tol,
                      "iterations": iters, "seconds": elapsed,
+<<<<<<< HEAD
                      "converged": iters is not None and iters < a.max_iter,
+=======
+>>>>>>> 9de02e6 (Week6 lab)
                      "top10": [k for k, _ in top]})
         print(f"  beta {beta:<5}  {str(iters):>4} iterations  {elapsed:>7.3f}s   "
               f"top: {', '.join(k for k, _ in top[:3])}")

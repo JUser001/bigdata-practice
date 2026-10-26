@@ -86,6 +86,7 @@ class YourPageRank:
     """
 
     def __init__(self, beta=0.85, tol=1e-10, max_iter=100):
+<<<<<<< HEAD
         self.beta, self.tol, self.max_iter = beta, tol, max_iter
         self._held = 0
 
@@ -129,3 +130,12 @@ class YourPageRank:
 
     def memory_floats(self):
         return self._held
+=======
+        raise NotImplementedError("write your PageRank")
+
+    def run(self, graph):
+        raise NotImplementedError
+
+    def memory_floats(self):
+        raise NotImplementedError
+>>>>>>> 9de02e6 (Week6 lab)

@@ -1,5 +1,9 @@
 # student output
+<<<<<<< HEAD
 #*/out/
+=======
+*/out/
+>>>>>>> 9de02e6 (Week6 lab)
 
 # python
 __pycache__/
