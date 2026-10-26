@@ -1,0 +1,78 @@
+{
+  "runs": [
+    {
+      "support": 400,
+      "frequent_pairs": 249,
+      "peak_counters": 10585,
+      "seconds": 0.7687203000000409,
+      "peak_bytes": 1058767
+    },
+    {
+      "support": 200,
+      "frequent_pairs": 776,
+      "peak_counters": 58626,
+      "seconds": 1.5135315000002265,
+      "peak_bytes": 6383284
+    },
+    {
+      "support": 100,
+      "frequent_pairs": 2244,
+      "peak_counters": 273701,
+      "seconds": 2.8148510999999417,
+      "peak_bytes": 26391580
+    },
+    {
+      "support": 50,
+      "frequent_pairs": 6397,
+      "peak_counters": 820259,
+      "seconds": 4.510443600000144,
+      "peak_bytes": 102173692
+    },
+    {
+      "support": 25,
+      "frequent_pairs": 17045,
+      "peak_counters": 893456,
+      "seconds": 5.0797975999998926,
+      "peak_bytes": 102173492
+    },
+    {
+      "support": 12,
+      "frequent_pairs": 43116,
+      "peak_counters": 893456,
+      "seconds": 5.275303200000053,
+      "peak_bytes": 102718732
+    },
+    {
+      "support": 6,
+      "frequent_pairs": 101938,
+      "peak_counters": 893456,
+      "seconds": 5.446794999999838,
+      "peak_bytes": 119356444
+    },
+    {
+      "support": 3,
+      "frequent_pairs": 250054,
+      "peak_counters": 893456,
+      "seconds": 5.58615699999973,
+      "peak_bytes": 156703615
+    },
+    {
+      "support": 1,
+      "frequent_pairs": 893456,
+      "peak_counters": 893456,
+      "seconds": 7.089069699999982,
+      "peak_bytes": 327135727
+    }
+  ],
+  "machine": {
+    "platform": "Windows-10-10.0.19045-SP0",
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "python": "3.12.14",
+    "cpu_name": "Intel(R) Core(TM) i5-14400F",
+    "ram_total_gib": 31.84,
+    "ram_available_gib_at_inventory": 9.41,
+    "process_count_snapshot": 238,
+    "foreground_context": "Codex desktop and PowerShell/Python task; Windows background processes were active.",
+    "measurement_note": "peak_bytes is tracemalloc peak for Python allocations during each run; it is not whole-system RAM."
+  }
+}

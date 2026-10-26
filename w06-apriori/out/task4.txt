@@ -1,0 +1,10 @@
+Task 4 — SON optional run record
+
+Dataset: official fixed seed, 20,000 baskets, support 50.
+
+Chunks 8: baseline 6,397 pairs; SON 6,397 pairs; 14,201 candidates; missing 0, extra 0; SON 3.91 s, baseline 1.80 s.
+Chunks 4: baseline 6,397 pairs; SON 6,397 pairs; 9,876 candidates; missing 0, extra 0; SON 4.31 s, baseline 1.88 s.
+
+Changing chunk count changes candidate count; the final frequent-pair answer stays the same. The scaled local threshold is support × chunk_size / total_baskets. If every chunk had a pair count below that threshold, their sum would be below the global support, contradicting global frequency.
+
+Spark attempt: not run successfully; PySpark is not installed in this execution environment (ModuleNotFoundError). This is the optional Spark half only; the single-process SON tasks completed.
