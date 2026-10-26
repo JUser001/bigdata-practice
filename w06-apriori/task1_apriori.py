@@ -1,22 +1,8 @@
 #!/usr/bin/env python3
-"""Week 6 · Task 1 — A-Priori, and why the second pass is the whole problem.
-
-Textbook §6.1 (market-basket model), §6.2 (A-Priori).
-
-Finding frequent pairs is easy until you count how many pairs there are. With
-n items there are n(n-1)/2 of them, and for a supermarket's 10,000 items that
-is 50 million counters before you have read a single basket.
-
-A-Priori's observation is one sentence long: **a pair cannot be frequent unless
-both of its items are frequent.** One extra pass over the data buys you a much
-smaller second pass, and the whole chapter is consequences of that trade.
-
-    python3 task1_apriori.py --verify
-"""
+"""Week 6 Task 1: A-Priori frequent pairs and association rules."""
 import argparse
 from itertools import combinations
 
-# Small enough to check by hand. support threshold 3 unless stated.
 BASKETS = [
     {"bread", "milk"},
     {"bread", "diaper", "beer", "egg"},
@@ -29,41 +15,45 @@ BASKETS = [
 
 
 def frequent_singletons(baskets, support):
-    """Items appearing in at least `support` baskets. Return {item: count}."""
-    raise NotImplementedError("pass one")
+    """Return {item: count} for items appearing in at least support baskets."""
+    counts = {}
+    for basket in baskets:
+        for item in basket:
+            counts[item] = counts.get(item, 0) + 1
+    return {item: count for item, count in counts.items() if count >= support}
 
 
 def frequent_pairs(baskets, support):
-    """Pairs appearing in at least `support` baskets, using A-Priori.
-
-    Return {frozenset({a, b}): count}.
-
-    The requirement that makes this A-Priori rather than brute force: pass two
-    must only ever count pairs **both of whose items were frequent in pass one**.
-    If you count every pair and filter afterwards you have written the thing
-    A-Priori exists to avoid, and it will pass this harness while failing the
-    point. Task 3 measures whether you actually did it.
-    """
-    raise NotImplementedError("pass two")
+    """Count frequent pairs, generating candidates only from frequent items."""
+    frequent_items = set(frequent_singletons(baskets, support))
+    counts = {}
+    for basket in baskets:
+        survivors = sorted(basket & frequent_items)
+        for a, b in combinations(survivors, 2):
+            pair = frozenset((a, b))
+            counts[pair] = counts.get(pair, 0) + 1
+    return {pair: count for pair, count in counts.items() if count >= support}
 
 
 def association_rules(baskets, support, min_confidence):
-    """Rules I -> j from the frequent pairs.
+    """Return directional rules (antecedent, consequent, confidence, lift)."""
+    n_baskets = len(baskets)
+    if n_baskets == 0:
+        return []
+    singleton_counts = frequent_singletons(baskets, support)
+    pair_counts = frequent_pairs(baskets, support)
+    rules = []
+    for pair, pair_count in pair_counts.items():
+        a, b = sorted(pair)
+        for antecedent, consequent in ((a, b), (b, a)):
+            confidence = pair_count / singleton_counts[antecedent]
+            if confidence >= min_confidence:
+                consequent_support = singleton_counts[consequent] / n_baskets
+                lift = confidence / consequent_support
+                rules.append((antecedent, consequent, confidence, lift))
+    return sorted(rules, key=lambda rule: rule[2], reverse=True)
 
-    For a frequent pair {i, j}, confidence of i -> j is
-    support({i, j}) / support({i}).
 
-    Return [(antecedent, consequent, confidence, lift), ...] for rules whose
-    confidence is at least `min_confidence`, sorted by confidence descending.
-
-    `lift` is confidence divided by the consequent's own support fraction. A
-    rule with high confidence and lift near 1 tells you nothing - the consequent
-    was common anyway - and §6.1.3 is about why that matters more than it looks.
-    """
-    raise NotImplementedError("rules")
-
-
-# ------------------------------------------------------------------- harness
 def verify():
     fails = 0
 
@@ -74,44 +64,34 @@ def verify():
               + ("" if ok else f"\n{'':>54}want {want}"))
         fails += not ok
 
-    try:
-        singles = frequent_singletons(BASKETS, 3)
-    except NotImplementedError:
-        print("  frequent_singletons is still a stub"); return 1
-    # counted by hand: bread 5, milk 5, diaper 5, beer 5, cola 2, egg 1
+    singles = frequent_singletons(BASKETS, 3)
     check("frequent singletons at support 3",
           dict(sorted(singles.items())),
           {"beer": 5, "bread": 5, "diaper": 5, "milk": 5})
 
-    try:
-        pairs = frequent_pairs(BASKETS, 3)
-    except NotImplementedError:
-        print("  frequent_pairs is still a stub"); return 1
-    got = {tuple(sorted(k)): v for k, v in pairs.items()}
+    pairs = frequent_pairs(BASKETS, 3)
+    got = {tuple(sorted(pair)): count for pair, count in pairs.items()}
     check("frequent pairs at support 3", dict(sorted(got.items())),
-          {("beer", "bread"): 3, ("beer", "diaper"): 4, ("beer", "milk"): 3,
-           ("bread", "diaper"): 3, ("bread", "milk"): 4, ("diaper", "milk"): 3})
-
-    # cola appears twice, so it must never reach pass two
+          {("beer", "bread"): 3, ("beer", "diaper"): 4,
+           ("beer", "milk"): 3, ("bread", "diaper"): 3,
+           ("bread", "milk"): 4, ("diaper", "milk"): 3})
     check("infrequent items excluded from pairs",
-          any("cola" in k or "egg" in k for k in got), False)
+          any("cola" in pair or "egg" in pair for pair in got), False)
 
-    try:
-        rules = association_rules(BASKETS, 3, 0.75)
-    except NotImplementedError:
-        print("  association_rules is still a stub"); return 1
-    # diaper -> beer: support 4, diaper 5, confidence 0.8
-    hit = [r for r in rules if r[0] == "diaper" and r[1] == "beer"]
-    check("diaper -> beer confidence", round(hit[0][2], 3) if hit else None, 0.8)
+    rules = association_rules(BASKETS, 3, 0.75)
+    hit = [rule for rule in rules if rule[0] == "diaper" and rule[1] == "beer"]
+    check("diaper -> beer confidence",
+          round(hit[0][2], 3) if hit else None, 0.8)
     check("rules are sorted by confidence",
-          all(rules[i][2] >= rules[i + 1][2] for i in range(len(rules) - 1)), True)
+          all(rules[i][2] >= rules[i + 1][2]
+              for i in range(len(rules) - 1)), True)
 
     print(f"\n  {'all ok' if not fails else str(fails) + ' failed'}")
     return 1 if fails else 0
 
 
 if __name__ == "__main__":
-    p = argparse.ArgumentParser()
-    p.add_argument("--verify", action="store_true")
-    a = p.parse_args()
-    raise SystemExit(verify() if a.verify else p.print_help())
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--verify", action="store_true")
+    args = parser.parse_args()
+    raise SystemExit(verify() if args.verify else parser.print_help())

@@ -34,7 +34,17 @@ def son_pass_one(chunks, support, total_baskets):
 
     TASK 4a
     """
-    raise NotImplementedError("TASK 4a - SON pass one")
+    from task1_apriori import frequent_pairs
+
+    candidates = set()
+    if total_baskets <= 0:
+        return candidates
+    for chunk in chunks:
+        if not chunk:
+            continue
+        scaled_support = support * len(chunk) / total_baskets
+        candidates.update(frequent_pairs(chunk, scaled_support))
+    return candidates
 
 
 def son_pass_two(baskets, candidates, support):
@@ -46,7 +56,15 @@ def son_pass_two(baskets, candidates, support):
 
     TASK 4b
     """
-    raise NotImplementedError("TASK 4b - SON pass two")
+    counts = {}
+    candidate_set = set(candidates)
+    for basket in baskets:
+        for pair in combinations(sorted(basket), 2):
+            key = frozenset(pair)
+            if key in candidate_set:
+                counts[key] = counts.get(key, 0) + 1
+    return {pair: count for pair, count in counts.items()
+            if count >= support}
 
 
 # ------------------------------------------------------------------- harness
