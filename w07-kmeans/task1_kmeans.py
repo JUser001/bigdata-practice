@@ -22,7 +22,9 @@ BLOBS = [(0.0, 0.0), (0.2, 0.1), (0.1, 0.2),
 
 def euclidean(a, b):
     """Distance between two points of any dimension."""
-    raise NotImplementedError("distance")
+    if len(a) != len(b):
+        raise ValueError("points must have the same number of dimensions")
+    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
 
 
 def assign(points, centroids):
@@ -30,16 +32,40 @@ def assign(points, centroids):
 
     Ties go to the lower index, so that everybody's answer is the same.
     """
-    raise NotImplementedError("assignment step")
+    if not centroids:
+        raise ValueError("at least one centroid is required")
+    labels = []
+    for point in points:
+        best_index = 0
+        best_distance = euclidean(point, centroids[0])
+        for index in range(1, len(centroids)):
+            distance = euclidean(point, centroids[index])
+            if distance < best_distance:
+                best_index, best_distance = index, distance
+        labels.append(best_index)
+    return labels
 
 
-def update(points, labels, k):
+def update(points, labels, k, previous=None):
     """Move each centroid to the mean of its points.
 
-    An empty cluster has no mean. Decide what you do - and say so, because the
-    choice changes the result and there is more than one defensible answer.
+    An empty cluster has no mean. Keep its previous centroid when supplied;
+    without previous centroids, use the first point as a deterministic fallback.
     """
-    raise NotImplementedError("update step")
+    if k <= 0:
+        raise ValueError("k must be positive")
+    dimensions = len(points[0]) if points else 0
+    sums = [[0.0] * dimensions for _ in range(k)]
+    counts = [0] * k
+    for point, label in zip(points, labels):
+        counts[label] += 1
+        for dimension, value in enumerate(point):
+            sums[label][dimension] += value
+    # Empty clusters retain their previous centroid. If this helper is called
+    # without previous centroids, use a valid deterministic fallback point.
+    return [tuple(value / counts[index] for value in sums[index])
+            if counts[index] else (previous[index] if previous is not None else tuple(points[0]))
+            for index in range(k)]
 
 
 def kmeans(points, k, init="random", seed=246, max_iter=100):
@@ -56,12 +82,63 @@ def kmeans(points, k, init="random", seed=246, max_iter=100):
 
     Set `kmeans.iterations` to how many passes you used.
     """
-    raise NotImplementedError("k-means")
+    if not points:
+        raise ValueError("points must not be empty")
+    if not 1 <= k <= len(points):
+        raise ValueError("k must be between 1 and the number of points")
+    if max_iter < 1:
+        raise ValueError("max_iter must be at least 1")
+    if init not in ("random", "++"):
+        raise ValueError("init must be 'random' or '++'")
+
+    rng = random.Random(seed)
+    if init == "random":
+        centroids = [points[index] for index in rng.sample(range(len(points)), k)]
+    else:
+        chosen = [rng.randrange(len(points))]
+        while len(chosen) < k:
+            centers = [points[index] for index in chosen]
+            weights = []
+            for point in points:
+                nearest_sq = min(sum((x - y) ** 2 for x, y in zip(point, center))
+                                 for center in centers)
+                weights.append(nearest_sq)
+            total = sum(weights)
+            if total == 0:
+                # All remaining points coincide with an existing center.
+                remaining = [index for index in range(len(points)) if index not in chosen]
+                chosen.append(rng.choice(remaining))
+            else:
+                threshold = rng.random() * total
+                cumulative = 0.0
+                selected = None
+                for index, weight in enumerate(weights):
+                    cumulative += weight
+                    if cumulative > threshold:
+                        selected = index
+                        break
+                if selected is None:
+                    selected = max(range(len(weights)), key=weights.__getitem__)
+                chosen.append(selected)
+        centroids = [points[index] for index in chosen]
+
+    labels = None
+    kmeans.iterations = 0
+    for iteration in range(1, max_iter + 1):
+        new_labels = assign(points, centroids)
+        new_centroids = update(points, new_labels, k, previous=centroids)
+        kmeans.iterations = iteration
+        unchanged = new_labels == labels
+        labels, centroids = new_labels, new_centroids
+        if unchanged:
+            break
+    return labels, centroids, sse_of(points, labels, centroids)
 
 
 def sse_of(points, labels, centroids):
     """Sum of squared distances from each point to its assigned centroid."""
-    raise NotImplementedError("sse")
+    return sum(sum((x - y) ** 2 for x, y in zip(point, centroids[label]))
+               for point, label in zip(points, labels))
 
 
 # ------------------------------------------------------------------- harness

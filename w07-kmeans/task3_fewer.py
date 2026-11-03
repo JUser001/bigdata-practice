@@ -81,7 +81,86 @@ class YourKMeans:
     """
 
     def __init__(self, k, max_iter=50):
-        raise NotImplementedError("write your k-means")
+        if k <= 0:
+            raise ValueError("k must be positive")
+        self.k, self.max_iter = k, max_iter
+        self.iterations = 0
+        self.pruned_by_lower = 0
+        self.pruned_by_separation = 0
+        self.pruned_by_both = 0
 
     def run(self, points, initial_centroids, distance):
-        raise NotImplementedError
+        n = len(points)
+        centroids = list(initial_centroids)
+        if len(centroids) != self.k:
+            raise ValueError("initial_centroids must contain exactly k centers")
+        if not points:
+            self.iterations = 0
+            return [], centroids
+
+        # Hamerly bounds: upper[i] bounds the distance to point i's assigned
+        # center; lower[i] bounds its distance to every other center.
+        labels = [None] * n
+        upper = [float("inf")] * n
+        lower = [0.0] * n
+        self.pruned_by_lower = self.pruned_by_separation = self.pruned_by_both = 0
+
+        for iteration in range(1, self.max_iter + 1):
+            # Half the nearest-center separation is a second safe pruning test.
+            separation = [float("inf")] * self.k
+            for a in range(self.k):
+                for b in range(a + 1, self.k):
+                    half = distance(centroids[a], centroids[b]) / 2.0
+                    if half < separation[a]:
+                        separation[a] = half
+                    if half < separation[b]:
+                        separation[b] = half
+
+            changed = False
+            for i, point in enumerate(points):
+                old_label = labels[i]
+                if old_label is not None:
+                    passes_lower = upper[i] < lower[i]
+                    passes_separation = upper[i] < separation[old_label]
+                    if passes_lower or passes_separation:
+                        if passes_lower and passes_separation:
+                            self.pruned_by_both += 1
+                        elif passes_lower:
+                            self.pruned_by_lower += 1
+                        else:
+                            self.pruned_by_separation += 1
+                        continue
+
+                # A point that fails either bound is checked exactly. Keeping
+                # centers in index order makes distance ties go to the lower id.
+                distances = [distance(point, center) for center in centroids]
+                best_label = min(range(self.k), key=distances.__getitem__)
+                best_distance = distances[best_label]
+                second_distance = min(
+                    (distances[j] for j in range(self.k) if j != best_label),
+                    default=float("inf"))
+                if old_label != best_label:
+                    labels[i] = best_label
+                    changed = True
+                upper[i] = best_distance
+                lower[i] = second_distance
+
+            new_centroids = _means(points, labels, self.k, centroids)
+            self.iterations = iteration
+            if not changed:
+                return labels, new_centroids
+
+            # Moving centers changes both bounds. The largest movement among
+            # competing centers gives a valid update to each lower bound.
+            shifts = [distance(old, new)
+                      for old, new in zip(centroids, new_centroids)]
+            max_other_shift = [
+                max((shifts[j] for j in range(self.k) if j != own), default=0.0)
+                for own in range(self.k)
+            ]
+            for i, label in enumerate(labels):
+                upper[i] += shifts[label]
+                lower[i] = max(0.0, lower[i] - max_other_shift[label])
+            centroids = new_centroids
+
+        return labels, centroids
